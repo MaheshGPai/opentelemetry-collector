@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/rs/cors"
+	"go.opentelemetry.io/collector/config/confighttp/mw"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"golang.org/x/net/http2"
@@ -306,6 +307,12 @@ type ServerConfig struct {
 
 	// CompressionAlgorithms configures the list of compression algorithms the server can accept. Default: ["", "gzip", "zstd", "zlib", "snappy", "deflate"]
 	CompressionAlgorithms []string `mapstructure:"compression_algorithms"`
+
+	// MiddlewareTimeout is the maximum duration after which the client request gets a timeout response.
+	// MiddlewareTimeout duration starts after the headers are read
+	MiddlewareTimeout time.Duration `mapstructure:"mw_timeout"`
+	// ReadHeaderTimeout is the maximum duration for reading the client request headers. After this duration client's connection will be reset.
+	ReadHeaderTimeout time.Duration `mapstructure:"read_header_timeout"`
 }
 
 // ToListener creates a net.Listener.
@@ -429,7 +436,8 @@ func (hss *ServerConfig) ToServer(_ context.Context, host component.Host, settin
 	}
 
 	return &http.Server{
-		Handler: handler,
+		ReadHeaderTimeout: hss.ReadHeaderTimeout,
+		Handler:           mw.TimeoutHandler(handler, hss.MiddlewareTimeout),
 	}, nil
 }
 

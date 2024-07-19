@@ -63,3 +63,7 @@ func (ms Traces) ResourceSpans() ResourceSpansSlice {
 func (ms Traces) MarkReadOnly() {
 	internal.SetTracesState(internal.Traces(ms), internal.StateReadOnly)
 }
+
+func (ms Traces) Size() int {
+	return ms.getOrig().Size()
+}
