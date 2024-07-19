@@ -22,6 +22,9 @@ func ReadInt32(iter *jsoniter.Iterator) int32 {
 			return 0
 		}
 		return int32(val)
+	case jsoniter.NilValue:
+		iter.ReadString() // needed to skip the null value
+		return 0
 	default:
 		iter.ReportError("ReadInt32", "unsupported value type")
 		return 0
@@ -41,6 +44,9 @@ func ReadUint32(iter *jsoniter.Iterator) uint32 {
 			return 0
 		}
 		return uint32(val)
+	case jsoniter.NilValue:
+		iter.ReadString() // needed to skip the null value
+		return 0
 	default:
 		iter.ReportError("ReadUint32", "unsupported value type")
 		return 0
@@ -60,6 +66,9 @@ func ReadInt64(iter *jsoniter.Iterator) int64 {
 			return 0
 		}
 		return val
+	case jsoniter.NilValue:
+		iter.ReadString() // needed to skip the null value
+		return 0
 	default:
 		iter.ReportError("ReadInt64", "unsupported value type")
 		return 0
@@ -79,6 +88,9 @@ func ReadUint64(iter *jsoniter.Iterator) uint64 {
 			return 0
 		}
 		return val
+	case jsoniter.NilValue:
+		iter.ReadString() // needed to skip the null value
+		return 0
 	default:
 		iter.ReportError("ReadUint64", "unsupported value type")
 		return 0
@@ -96,6 +108,9 @@ func ReadFloat64(iter *jsoniter.Iterator) float64 {
 			return 0
 		}
 		return val
+	case jsoniter.NilValue:
+		iter.ReadString() // needed to skip the null value
+		return 0
 	default:
 		iter.ReportError("ReadUint64", "unsupported value type")
 		return 0

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 
 <p align="center">
@@ -204,3 +205,7 @@ Thanks to all the people who already contributed!
 <a href="https://github.com/open-telemetry/opentelemetry-collector/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-collector" />
 </a>
+=======
+# opentelemetry-collector-intu
+This repo is a mirror of https://github.com/open-telemetry/opentelemetry-collector. RUM FCI service currently uses v0.10.0 version of opentel collector. Any bug fixes/enhancements to this version is maintained in this repo.
+>>>>>>> 67c841d2b (Update README.md)
