@@ -126,21 +126,21 @@ func (r *otlpReceiver) startHTTPServer(ctx context.Context, host component.Host)
 	if r.nextTraces != nil {
 		httpTracesReceiver := trace.New(r.nextTraces, r.obsrepHTTP)
 		httpMux.HandleFunc(r.cfg.HTTP.TracesURLPath, func(resp http.ResponseWriter, req *http.Request) {
-			handleTraces(resp, req, httpTracesReceiver)
+			handleTraces(resp, req, httpTracesReceiver, r.settings.Logger)
 		})
 	}
 
 	if r.nextMetrics != nil {
 		httpMetricsReceiver := metrics.New(r.nextMetrics, r.obsrepHTTP)
 		httpMux.HandleFunc(r.cfg.HTTP.MetricsURLPath, func(resp http.ResponseWriter, req *http.Request) {
-			handleMetrics(resp, req, httpMetricsReceiver)
+			handleMetrics(resp, req, httpMetricsReceiver, r.settings.Logger)
 		})
 	}
 
 	if r.nextLogs != nil {
 		httpLogsReceiver := logs.New(r.nextLogs, r.obsrepHTTP)
 		httpMux.HandleFunc(r.cfg.HTTP.LogsURLPath, func(resp http.ResponseWriter, req *http.Request) {
-			handleLogs(resp, req, httpLogsReceiver)
+			handleLogs(resp, req, httpLogsReceiver, r.settings.Logger)
 		})
 	}
 
@@ -208,4 +208,5 @@ func (r *otlpReceiver) registerMetricsConsumer(mc consumer.Metrics) {
 
 func (r *otlpReceiver) registerLogsConsumer(lc consumer.Logs) {
 	r.nextLogs = lc
+
 }
