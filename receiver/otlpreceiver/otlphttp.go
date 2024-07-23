@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc/status"
 
 	"go.opentelemetry.io/collector/internal/statusutil"
@@ -26,125 +27,126 @@ var fallbackMsg = []byte(`{"code": 13, "message": "failed to marshal error messa
 
 const fallbackContentType = "application/json"
 
-func handleTraces(resp http.ResponseWriter, req *http.Request, tracesReceiver *trace.Receiver) {
+func handleTraces(resp http.ResponseWriter, req *http.Request, tracesReceiver *trace.Receiver, logger *zap.Logger) {
 	enc, ok := readContentType(resp, req)
 	if !ok {
 		return
 	}
 
-	body, ok := readAndCloseBody(resp, req, enc)
+	body, ok := readAndCloseBody(resp, req, enc, logger)
 	if !ok {
 		return
 	}
 
 	otlpReq, err := enc.unmarshalTracesRequest(body)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusBadRequest)
+		writeError(resp, enc, err, http.StatusBadRequest, logger)
 		return
 	}
 
 	otlpResp, err := tracesReceiver.Export(req.Context(), otlpReq)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 
 	msg, err := enc.marshalTracesResponse(otlpResp)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 	writeResponse(resp, enc.contentType(), http.StatusOK, msg)
 }
 
-func handleMetrics(resp http.ResponseWriter, req *http.Request, metricsReceiver *metrics.Receiver) {
+func handleMetrics(resp http.ResponseWriter, req *http.Request, metricsReceiver *metrics.Receiver, logger *zap.Logger) {
 	enc, ok := readContentType(resp, req)
 	if !ok {
 		return
 	}
 
-	body, ok := readAndCloseBody(resp, req, enc)
+	body, ok := readAndCloseBody(resp, req, enc, logger)
 	if !ok {
 		return
 	}
 
 	otlpReq, err := enc.unmarshalMetricsRequest(body)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusBadRequest)
+		writeError(resp, enc, err, http.StatusBadRequest, logger)
 		return
 	}
 
 	otlpResp, err := metricsReceiver.Export(req.Context(), otlpReq)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 
 	msg, err := enc.marshalMetricsResponse(otlpResp)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 	writeResponse(resp, enc.contentType(), http.StatusOK, msg)
 }
 
-func handleLogs(resp http.ResponseWriter, req *http.Request, logsReceiver *logs.Receiver) {
+func handleLogs(resp http.ResponseWriter, req *http.Request, logsReceiver *logs.Receiver, logger *zap.Logger) {
 	enc, ok := readContentType(resp, req)
+
 	if !ok {
 		return
 	}
 
-	body, ok := readAndCloseBody(resp, req, enc)
+	body, ok := readAndCloseBody(resp, req, enc, logger)
 	if !ok {
 		return
 	}
 
 	otlpReq, err := enc.unmarshalLogsRequest(body)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusBadRequest)
+		writeError(resp, enc, err, http.StatusBadRequest, logger)
 		return
 	}
 
 	otlpResp, err := logsReceiver.Export(req.Context(), otlpReq)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 
 	msg, err := enc.marshalLogsResponse(otlpResp)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 	writeResponse(resp, enc.contentType(), http.StatusOK, msg)
 }
 
-func handleProfiles(resp http.ResponseWriter, req *http.Request, profilesReceiver *profiles.Receiver) {
+func handleProfiles(resp http.ResponseWriter, req *http.Request, profilesReceiver *profiles.Receiver, logger *zap.Logger) {
 	enc, ok := readContentType(resp, req)
 	if !ok {
 		return
 	}
 
-	body, ok := readAndCloseBody(resp, req, enc)
+	body, ok := readAndCloseBody(resp, req, enc, logger)
 	if !ok {
 		return
 	}
 
 	otlpReq, err := enc.unmarshalProfilesRequest(body)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusBadRequest)
+		writeError(resp, enc, err, http.StatusBadRequest, logger)
 		return
 	}
 
 	otlpResp, err := profilesReceiver.Export(req.Context(), otlpReq)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 
 	msg, err := enc.marshalProfilesResponse(otlpResp)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 	writeResponse(resp, enc.contentType(), http.StatusOK, msg)
@@ -167,21 +169,24 @@ func readContentType(resp http.ResponseWriter, req *http.Request) (encoder, bool
 	}
 }
 
-func readAndCloseBody(resp http.ResponseWriter, req *http.Request, enc encoder) ([]byte, bool) {
+func readAndCloseBody(resp http.ResponseWriter, req *http.Request, encoder encoder, logger *zap.Logger) ([]byte, bool) {
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusBadRequest)
+		writeError(resp, encoder, err, http.StatusBadRequest, logger)
 		return nil, false
 	}
 	if err = req.Body.Close(); err != nil {
-		writeError(resp, enc, err, http.StatusBadRequest)
+		writeError(resp, encoder, err, http.StatusBadRequest, logger)
 		return nil, false
 	}
 	return body, true
 }
 
 // writeError encodes the HTTP error inside a rpc.Status message as required by the OTLP protocol.
-func writeError(w http.ResponseWriter, encoder encoder, err error, statusCode int) {
+func writeError(w http.ResponseWriter, encoder encoder, err error, statusCode int, logger *zap.Logger) {
+	if logger != nil {
+		logger.Info("HTTP error", zap.Int("status_code", statusCode), zap.Error(err))
+	}
 	s, ok := status.FromError(err)
 	if ok {
 		statusCode = errors.GetHTTPStatusCodeFromStatus(s)

@@ -1,0 +1,9 @@
+ignore-files:
+  - exporter/jaegerexporter/testdata/client.key
+  - exporter/jaegerexporter/testdata/server.key
+  - receiver/jaegerreceiver/testdata/client.key
+  - receiver/jaegerreceiver/testdata/server.key
+  - config/confighttp/testdata/client.key
+  - config/confighttp/testdata/server.key
+  - config/configgrpc/testdata/client.key
+  - config/configgrpc/testdata/server.key

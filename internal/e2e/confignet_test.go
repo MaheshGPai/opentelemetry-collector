@@ -20,7 +20,9 @@ func TestConfmapMarshalConfigNet(t *testing.T) {
 
 	conf = confmap.New()
 	require.NoError(t, conf.Marshal(confignet.NewDefaultAddrConfig()))
-	assert.Equal(t, map[string]any{}, conf.ToStringMap())
+	assert.Equal(t, map[string]any{
+		"max_active_connections": 0,
+	}, conf.ToStringMap())
 
 	conf = confmap.New()
 	require.NoError(t, conf.Marshal(confignet.NewDefaultTCPAddrConfig()))

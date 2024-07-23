@@ -51,7 +51,8 @@ func TestConfmapMarshalConfigGRPC(t *testing.T) {
 	conf = confmap.New()
 	require.NoError(t, conf.Marshal(configgrpc.NewDefaultServerConfig()))
 	assert.Equal(t, map[string]any{
-		"keepalive": keepaliveServerConfig,
-		"transport": confignet.TransportType("tcp"),
+		"keepalive":              keepaliveServerConfig,
+		"max_active_connections": 0,
+		"transport":              confignet.TransportType("tcp"),
 	}, conf.ToStringMap())
 }

@@ -18,10 +18,12 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/net/http2"
+	"golang.org/x/net/netutil"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configauth"
 	"go.opentelemetry.io/collector/config/confighttp/internal"
+	"go.opentelemetry.io/collector/config/confighttp/mw"
 	"go.opentelemetry.io/collector/config/configmiddleware"
 	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/config/configoptional"
@@ -97,6 +99,13 @@ type ServerConfig struct {
 	// KeepAlivesEnabled controls whether HTTP keep-alives are enabled.
 	// By default, keep-alives are always enabled. Only very resource-constrained environments should disable them.
 	KeepAlivesEnabled bool `mapstructure:"keep_alives_enabled,omitempty"`
+
+	// MiddlewareTimeout is the maximum duration after which the client request gets a timeout response.
+	// MiddlewareTimeout duration starts after the headers are read
+	MiddlewareTimeout time.Duration `mapstructure:"mw_timeout"`
+
+	// MaxActiveConnectionCount is the maximum simultaneous connections to be accepted.
+	MaxActiveConnections int `mapstructure:"max_active_connections"`
 }
 
 // NewDefaultServerConfig returns ServerConfig type object with default values.
@@ -118,6 +127,10 @@ type AuthConfig struct {
 	// When a parameter is found in both the query string and the header, the value from the query string will be used.
 	RequestParameters []string `mapstructure:"request_params,omitempty"`
 	// prevent unkeyed literal initialization
+
+	// MaxActiveConnectionCount is the maximum simultaneous connections to be accepted.
+	MaxActiveConnections int `mapstructure:"max_active_connections"`
+
 	_ struct{}
 }
 
@@ -138,6 +151,9 @@ func (sc *ServerConfig) ToListener(ctx context.Context) (net.Listener, error) {
 		listener = tls.NewListener(listener, tlsCfg)
 	}
 
+	if sc.MaxActiveConnections > 0 {
+		listener = netutil.LimitListener(listener, sc.MaxActiveConnections)
+	}
 	return listener, nil
 }
 
@@ -284,7 +300,7 @@ func (sc *ServerConfig) ToServer(ctx context.Context, extensions map[component.I
 	}
 
 	server := &http.Server{
-		Handler:           handler,
+		Handler:           mw.TimeoutHandler(handler, sc.MiddlewareTimeout),
 		ReadTimeout:       sc.ReadTimeout,
 		ReadHeaderTimeout: sc.ReadHeaderTimeout,
 		WriteTimeout:      sc.WriteTimeout,
