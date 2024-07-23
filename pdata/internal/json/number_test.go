@@ -47,6 +47,11 @@ func TestReadInt32(t *testing.T) {
 			jsonStr: `true`,
 			wantErr: true,
 		},
+		{
+			name:    "null",
+			jsonStr: `null`,
+			want:    0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -59,6 +64,7 @@ func TestReadInt32(t *testing.T) {
 			}
 			assert.NoError(t, iter.Error)
 			assert.Equal(t, tt.want, val)
+			assert.Equal(t, iter.WhatIsNext(), jsoniter.InvalidValue) // assert iterator reaches end of string
 		})
 	}
 }
@@ -100,6 +106,11 @@ func TestReadUint32(t *testing.T) {
 			jsonStr: `true`,
 			wantErr: true,
 		},
+		{
+			name:    "null",
+			jsonStr: `null`,
+			want:    0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -112,6 +123,7 @@ func TestReadUint32(t *testing.T) {
 			}
 			assert.NoError(t, iter.Error)
 			assert.Equal(t, tt.want, val)
+			assert.Equal(t, iter.WhatIsNext(), jsoniter.InvalidValue) // assert iterator reaches end of string
 		})
 	}
 }
@@ -153,6 +165,11 @@ func TestReadInt64(t *testing.T) {
 			jsonStr: `true`,
 			wantErr: true,
 		},
+		{
+			name:    "null",
+			jsonStr: `null`,
+			want:    0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -165,6 +182,7 @@ func TestReadInt64(t *testing.T) {
 			}
 			assert.NoError(t, iter.Error)
 			assert.Equal(t, tt.want, val)
+			assert.Equal(t, iter.WhatIsNext(), jsoniter.InvalidValue) // assert iterator reaches end of string
 		})
 	}
 }
@@ -206,6 +224,11 @@ func TestReadUint64(t *testing.T) {
 			jsonStr: `true`,
 			wantErr: true,
 		},
+		{
+			name:    "null",
+			jsonStr: `null`,
+			want:    0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -218,6 +241,7 @@ func TestReadUint64(t *testing.T) {
 			}
 			assert.NoError(t, iter.Error)
 			assert.Equal(t, tt.want, val)
+			assert.Equal(t, iter.WhatIsNext(), jsoniter.InvalidValue) // assert iterator reaches end of string
 		})
 	}
 }
@@ -259,6 +283,11 @@ func TestReadFloat64(t *testing.T) {
 			jsonStr: `true`,
 			wantErr: true,
 		},
+		{
+			name:    "null",
+			jsonStr: `null`,
+			want:    0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -271,6 +300,7 @@ func TestReadFloat64(t *testing.T) {
 			}
 			assert.NoError(t, iter.Error)
 			assert.Equal(t, tt.want, val)
+			assert.Equal(t, iter.WhatIsNext(), jsoniter.InvalidValue) // assert iterator reaches end of string
 		})
 	}
 }

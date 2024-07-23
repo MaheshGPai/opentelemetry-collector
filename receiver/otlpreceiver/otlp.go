@@ -6,13 +6,6 @@ package otlpreceiver // import "go.opentelemetry.io/collector/receiver/otlprecei
 import (
 	"context"
 	"errors"
-	"net"
-	"net/http"
-	"sync"
-
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/consumer"
@@ -24,6 +17,11 @@ import (
 	"go.opentelemetry.io/collector/receiver/otlpreceiver/internal/metrics"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver/internal/trace"
 	"go.opentelemetry.io/collector/receiver/receiverhelper"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"net"
+	"net/http"
+	"sync"
 )
 
 // otlpReceiver is the type that exposes Trace and Metrics reception.
@@ -126,21 +124,21 @@ func (r *otlpReceiver) startHTTPServer(ctx context.Context, host component.Host)
 	if r.nextTraces != nil {
 		httpTracesReceiver := trace.New(r.nextTraces, r.obsrepHTTP)
 		httpMux.HandleFunc(r.cfg.HTTP.TracesURLPath, func(resp http.ResponseWriter, req *http.Request) {
-			handleTraces(resp, req, httpTracesReceiver)
+			handleTraces(resp, req, httpTracesReceiver, r.settings.Logger)
 		})
 	}
 
 	if r.nextMetrics != nil {
 		httpMetricsReceiver := metrics.New(r.nextMetrics, r.obsrepHTTP)
 		httpMux.HandleFunc(r.cfg.HTTP.MetricsURLPath, func(resp http.ResponseWriter, req *http.Request) {
-			handleMetrics(resp, req, httpMetricsReceiver)
+			handleMetrics(resp, req, httpMetricsReceiver, r.settings.Logger)
 		})
 	}
 
 	if r.nextLogs != nil {
 		httpLogsReceiver := logs.New(r.nextLogs, r.obsrepHTTP)
 		httpMux.HandleFunc(r.cfg.HTTP.LogsURLPath, func(resp http.ResponseWriter, req *http.Request) {
-			handleLogs(resp, req, httpLogsReceiver)
+			handleLogs(resp, req, httpLogsReceiver, r.settings.Logger)
 		})
 	}
 
@@ -208,4 +206,5 @@ func (r *otlpReceiver) registerMetricsConsumer(mc consumer.Metrics) {
 
 func (r *otlpReceiver) registerLogsConsumer(lc consumer.Logs) {
 	r.nextLogs = lc
+
 }

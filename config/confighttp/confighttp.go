@@ -22,6 +22,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configauth"
 	"go.opentelemetry.io/collector/config/configcompression"
+	"go.opentelemetry.io/collector/config/confighttp/mw"
 	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/config/internal"
@@ -280,6 +281,12 @@ type ServerConfig struct {
 	// Additional headers attached to each HTTP response sent to the client.
 	// Header values are opaque since they may be sensitive.
 	ResponseHeaders map[string]configopaque.String `mapstructure:"response_headers"`
+
+	// MiddlewareTimeout is the maximum duration after which the client request gets a timeout response.
+	// MiddlewareTimeout duration starts after the headers are read
+	MiddlewareTimeout time.Duration `mapstructure:"mw_timeout"`
+	// ReadHeaderTimeout is the maximum duration for reading the client request headers. After this duration client's connection will be reset.
+	ReadHeaderTimeout time.Duration `mapstructure:"read_header_timeout"`
 }
 
 // Deprecated: [v0.98.0] Use ToListenerContext instead.
@@ -403,7 +410,8 @@ func (hss *ServerConfig) ToServerContext(_ context.Context, host component.Host,
 	}
 
 	return &http.Server{
-		Handler: handler,
+		ReadHeaderTimeout: hss.ReadHeaderTimeout,
+		Handler:           mw.TimeoutHandler(handler, hss.MiddlewareTimeout),
 	}, nil
 }
 

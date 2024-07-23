@@ -62,7 +62,7 @@ func (ms ResourceSpans) unmarshalJsoniter(iter *jsoniter.Iterator) {
 		switch f {
 		case "resource":
 			json.ReadResource(iter, internal.GetOrigResource(internal.Resource(ms.Resource())))
-		case "scopeSpans", "scope_spans":
+		case "scopeSpans", "scope_spans", "instrumentationLibrarySpans":
 			iter.ReadArrayCB(func(iter *jsoniter.Iterator) bool {
 				ms.ScopeSpans().AppendEmpty().unmarshalJsoniter(iter)
 				return true
@@ -79,7 +79,7 @@ func (ms ResourceSpans) unmarshalJsoniter(iter *jsoniter.Iterator) {
 func (ms ScopeSpans) unmarshalJsoniter(iter *jsoniter.Iterator) {
 	iter.ReadObjectCB(func(iter *jsoniter.Iterator, f string) bool {
 		switch f {
-		case "scope":
+		case "scope", "instrumentationLibrary":
 			json.ReadScope(iter, &ms.orig.Scope)
 		case "spans":
 			iter.ReadArrayCB(func(iter *jsoniter.Iterator) bool {
