@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"golang.org/x/net/netutil"
 	"io"
 	"net"
 	"net/http"
@@ -354,6 +355,9 @@ type ServerConfig struct {
 	// is zero, the value of ReadTimeout is used. If both are
 	// zero, there is no timeout.
 	IdleTimeout time.Duration `mapstructure:"idle_timeout"`
+
+	// MaxActiveConnectionCount is the maximum simultaneous connections to be accepted.
+	MaxActiveConnections int `mapstructure:"max_active_connections"`
 }
 
 // NewDefaultServerConfig returns ServerConfig type object with default values.
@@ -377,6 +381,9 @@ type AuthConfig struct {
 	// RequestParameters is a list of parameters that should be extracted from the request and added to the context.
 	// When a parameter is found in both the query string and the header, the value from the query string will be used.
 	RequestParameters []string `mapstructure:"request_params"`
+
+	// MaxActiveConnectionCount is the maximum simultaneous connections to be accepted.
+	MaxActiveConnections int `mapstructure:"max_active_connections"`
 }
 
 // ToListener creates a net.Listener.
@@ -384,6 +391,10 @@ func (hss *ServerConfig) ToListener(ctx context.Context) (net.Listener, error) {
 	listener, err := net.Listen("tcp", hss.Endpoint)
 	if err != nil {
 		return nil, err
+	}
+
+	if hss.MaxActiveConnections > 0 {
+		listener = netutil.LimitListener(listener, hss.MaxActiveConnections)
 	}
 
 	if hss.TLSSetting != nil {

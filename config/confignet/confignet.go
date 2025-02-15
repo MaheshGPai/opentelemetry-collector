@@ -6,6 +6,7 @@ package confignet // import "go.opentelemetry.io/collector/config/confignet"
 import (
 	"context"
 	"fmt"
+	"golang.org/x/net/netutil"
 	"net"
 	"time"
 )
@@ -82,6 +83,9 @@ type AddrConfig struct {
 
 	// DialerConfig contains options for connecting to an address.
 	DialerConfig DialerConfig `mapstructure:"dialer,omitempty"`
+
+	// MaxActiveConnectionCount is the maximum simultaneous connections to be accepted.
+	MaxActiveConnections int `mapstructure:"max_active_connections"`
 }
 
 // NewDefaultAddrConfig creates a new AddrConfig with any default values set
@@ -100,7 +104,11 @@ func (na *AddrConfig) Dial(ctx context.Context) (net.Conn, error) {
 // Listen equivalent with net.ListenConfig's Listen for this address.
 func (na *AddrConfig) Listen(ctx context.Context) (net.Listener, error) {
 	lc := net.ListenConfig{}
-	return lc.Listen(ctx, string(na.Transport), na.Endpoint)
+	listener, err := lc.Listen(ctx, string(na.Transport), na.Endpoint)
+	if err != nil || na.MaxActiveConnections <= 0 {
+		return listener, err
+	}
+	return netutil.LimitListener(listener, na.MaxActiveConnections), nil
 }
 
 func (na *AddrConfig) Validate() error {

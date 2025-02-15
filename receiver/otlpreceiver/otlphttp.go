@@ -119,32 +119,32 @@ func handleLogs(resp http.ResponseWriter, req *http.Request, logsReceiver *logs.
 	writeResponse(resp, enc.contentType(), http.StatusOK, msg)
 }
 
-func handleProfiles(resp http.ResponseWriter, req *http.Request, profilesReceiver *profiles.Receiver) {
+func handleProfiles(resp http.ResponseWriter, req *http.Request, profilesReceiver *profiles.Receiver, logger *zap.Logger) {
 	enc, ok := readContentType(resp, req)
 	if !ok {
 		return
 	}
 
-	body, ok := readAndCloseBody(resp, req, enc)
+	body, ok := readAndCloseBody(resp, req, enc, logger)
 	if !ok {
 		return
 	}
 
 	otlpReq, err := enc.unmarshalProfilesRequest(body)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusBadRequest)
+		writeError(resp, enc, err, http.StatusBadRequest, logger)
 		return
 	}
 
 	otlpResp, err := profilesReceiver.Export(req.Context(), otlpReq)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 
 	msg, err := enc.marshalProfilesResponse(otlpResp)
 	if err != nil {
-		writeError(resp, enc, err, http.StatusInternalServerError)
+		writeError(resp, enc, err, http.StatusInternalServerError, logger)
 		return
 	}
 	writeResponse(resp, enc.contentType(), http.StatusOK, msg)
